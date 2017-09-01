@@ -101,7 +101,8 @@ public:
   ObservationBuffer(std::string topic_name, double observation_keep_time, double expected_update_rate,
                     double min_obstacle_height, double max_obstacle_height, double min_obstacle_range,
                     double max_obstacle_range, double min_raytrace_range, double max_raytrace_range,
-                    tf::TransformListener& tf, std::string global_frame, std::string sensor_frame, double tf_tolerance);
+                    tf::TransformListener& tf, std::string global_frame, std::string sensor_frame,
+                    double tf_tolerance, double fov_);
 
   /**
    * @brief  Destructor... cleans up
@@ -181,6 +182,7 @@ private:
   double min_obstacle_height_, max_obstacle_height_;
   boost::recursive_mutex lock_;  ///< @brief A lock for accessing data in callbacks safely
   double min_obstacle_range_, max_obstacle_range_, min_raytrace_range_, max_raytrace_range_;
+  double fov_;
   double tf_tolerance_;
 };
 }  // namespace costmap_2d

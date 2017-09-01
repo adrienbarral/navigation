@@ -73,12 +73,17 @@ class MapGenerator
       for(unsigned int y = 0; y < map->info.height; y++) {
         for(unsigned int x = 0; x < map->info.width; x++) {
           unsigned int i = x + (map->info.height - y - 1) * map->info.width;
-          if (map->data[i] == 0) { //occ [0,0.1)
-            fputc(254, out);
-          } else if (map->data[i] == +100) { //occ (0.65,1]
-            fputc(000, out);
-          } else { //occ [0.1,0.65]
-            fputc(205, out);
+          if (map->data[i] >= 0 && map->data[i] <=100) {
+            unsigned int value = round((float)(100.0-map->data[i])*2.55);
+            if (value == 128) {
+              fputc(129, out);
+            }
+            else {
+              fputc(value, out);
+            }
+          }
+          else {
+            fputc(128, out);
           }
         }
       }
@@ -106,7 +111,7 @@ free_thresh: 0.196
       double yaw, pitch, roll;
       mat.getEulerYPR(yaw, pitch, roll);
 
-      fprintf(yaml, "image: %s\nresolution: %f\norigin: [%f, %f, %f]\nnegate: 0\noccupied_thresh: 0.65\nfree_thresh: 0.196\n\n",
+      fprintf(yaml, "image: %s\nresolution: %f\norigin: [%f, %f, %f]\nnegate: 0\noccupied_thresh: 0.55\nfree_thresh: 0.196\nmode:scale\n\n",
               mapdatafile.c_str(), map->info.resolution, map->info.origin.position.x, map->info.origin.position.y, yaw);
 
       fclose(yaml);

@@ -88,7 +88,7 @@ void ObstacleLayer::onInitialize()
     ros::NodeHandle source_node(nh, source);
 
     // get the parameters for the specific topic
-    double observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height;
+    double observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height, fov_deg;
     std::string topic, sensor_frame, data_type;
     bool inf_is_valid, clearing, marking;
 
@@ -102,6 +102,7 @@ void ObstacleLayer::onInitialize()
     source_node.param("inf_is_valid", inf_is_valid, false);
     source_node.param("clearing", clearing, false);
     source_node.param("marking", marking, true);
+    source_node.param("fov_deg", fov_deg, 0.0);
 
     if (!sensor_frame.empty())
     {
@@ -145,7 +146,8 @@ void ObstacleLayer::onInitialize()
         boost::shared_ptr < ObservationBuffer
             > (new ObservationBuffer(topic, observation_keep_time, expected_update_rate, min_obstacle_height,
                                      max_obstacle_height, min_obstacle_range, max_obstacle_range, min_raytrace_range,
-                                     max_raytrace_range, *tf_, global_frame_, sensor_frame, transform_tolerance)));
+                                     max_raytrace_range, *tf_, global_frame_, sensor_frame, transform_tolerance,
+                                     fov_deg*M_PI/180.)));
 
     // check if we'll add this buffer to our marking observation buffers
     if (marking)
@@ -386,6 +388,10 @@ void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_ya
   // raytrace freespace
   for (unsigned int i = 0; i < clearing_observations.size(); ++i)
   {
+    if(clearing_observations[i].fov_ > 0)
+    {
+      clearObservationFOV(clearing_observations[i]);
+    }
     raytraceFreespace(clearing_observations[i], min_x, min_y, max_x, max_y);
   }
 
@@ -443,6 +449,30 @@ void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_ya
   }
 
   updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
+}
+
+void ObstacleLayer::clearObservationFOV(const Observation& observation)
+{
+  float angle_min = observation.orientation_in_global_frame_-observation.fov_/2.;
+  float angle_max = observation.orientation_in_global_frame_+observation.fov_/2.;
+
+  float range_min = observation.min_obstacle_range_;
+  float range_max = observation.max_obstacle_range_;
+
+  double x, y;
+  double rho, theta;
+  for(int iy = 0 ; iy < size_y_ ; iy++)
+  {
+    for(int ix = 0 ; ix < size_x_ ; ix++)
+    {
+      mapToWorld(ix, iy, x, y);
+      rho = hypot(x, y);
+      theta = atan2(y, x);
+      if(rho > range_min && rho < range_max && theta > angle_min && theta < angle_max){
+          costmap_[getIndex(ix, iy)] = FREE_SPACE;
+      }
+    }
+  }
 }
 
 void ObstacleLayer::updateFootprint(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,

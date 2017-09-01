@@ -64,12 +64,12 @@ ObservationBuffer::ObservationBuffer(string topic_name, double observation_keep_
                                      double min_obstacle_height, double max_obstacle_height, double min_obstacle_range,
                                      double max_obstacle_range, double min_raytrace_range, double max_raytrace_range,
                                      TransformListener& tf, string global_frame, string sensor_frame,
-                                     double tf_tolerance) :
+                                     double tf_tolerance, double fov) :
     tf_(tf), observation_keep_time_(observation_keep_time), expected_update_rate_(expected_update_rate),
     last_updated_(ros::Time::now()), global_frame_(global_frame), sensor_frame_(sensor_frame), topic_name_(topic_name),
     min_obstacle_height_(min_obstacle_height), max_obstacle_height_(max_obstacle_height),
     min_obstacle_range_(min_obstacle_range),  max_obstacle_range_(max_obstacle_range),
-    min_raytrace_range_(min_raytrace_range), max_raytrace_range_(max_raytrace_range), tf_tolerance_(tf_tolerance)
+    min_raytrace_range_(min_raytrace_range), max_raytrace_range_(max_raytrace_range), tf_tolerance_(tf_tolerance), fov_(fov)
 {
 }
 
@@ -193,6 +193,13 @@ void ObservationBuffer::bufferCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud)
     observation_cloud.points.resize(point_count);
     observation_cloud.header.stamp = cloud.header.stamp;
     observation_cloud.header.frame_id = global_frame_cloud.header.frame_id;
+
+    observation_list_.front().fov_ = this->fov_;
+    tf::StampedTransform transform;
+    tf_.lookupTransform(global_frame_, local_origin.frame_id_, local_origin.stamp_, transform);
+    observation_list_.front().orientation_in_global_frame_ = tf::getYaw(transform.getRotation());
+    ROS_INFO_STREAM("Pushing observation in frame : " << local_origin.frame_id_ << " with orientation : " <<
+                    observation_list_.front().orientation_in_global_frame_);
   }
   catch (TransformException& ex)
   {
