@@ -456,18 +456,23 @@ void ObstacleLayer::clearObservationFOV(const Observation& observation)
   float angle_min = observation.orientation_in_global_frame_-observation.fov_/2.;
   float angle_max = observation.orientation_in_global_frame_+observation.fov_/2.;
 
-  float range_min = observation.min_obstacle_range_;
-  float range_max = observation.max_obstacle_range_;
+  float range_min = observation.min_raytrace_range_;
+  float range_max = observation.max_raytrace_range_;
 
-  double x, y;
+  float ox = observation.origin_.x;
+  float oy = observation.origin_.y;
+
+  double x, y, dx, dy;
   double rho, theta;
   for(int iy = 0 ; iy < size_y_ ; iy++)
   {
     for(int ix = 0 ; ix < size_x_ ; ix++)
-    {
+    {        
       mapToWorld(ix, iy, x, y);
-      rho = hypot(x, y);
-      theta = atan2(y, x);
+      dx = x-ox;
+      dy = y-oy;
+      rho = hypot(dx, dy);
+      theta = atan2(dy, dx);
       if(rho > range_min && rho < range_max && theta > angle_min && theta < angle_max){
           costmap_[getIndex(ix, iy)] = FREE_SPACE;
       }

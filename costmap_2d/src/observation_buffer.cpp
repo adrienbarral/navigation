@@ -198,8 +198,8 @@ void ObservationBuffer::bufferCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud)
     tf::StampedTransform transform;
     tf_.lookupTransform(global_frame_, local_origin.frame_id_, local_origin.stamp_, transform);
     observation_list_.front().orientation_in_global_frame_ = tf::getYaw(transform.getRotation());
-    ROS_INFO_STREAM("Pushing observation in frame : " << local_origin.frame_id_ << " with orientation : " <<
-                    observation_list_.front().orientation_in_global_frame_);
+    /*ROS_INFO_STREAM("Pushing observation in frame : " << local_origin.frame_id_ << " with orientation : " <<
+                    observation_list_.front().orientation_in_global_frame_);*/
   }
   catch (TransformException& ex)
   {
